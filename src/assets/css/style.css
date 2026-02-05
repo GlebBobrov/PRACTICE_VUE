@@ -152,7 +152,7 @@ input:not(:placeholder-shown) {
 
     white-space: nowrap;     
     width: auto;             
-    max-width: none;       
+    max-width: none;        
 
     opacity: 0;
     transform: translateX(-20px);
@@ -175,8 +175,8 @@ input:not(:placeholder-shown) {
     bottom: 5%;
     left: 2%;
 
-    background-color: #dcf7e1;  
-    color: green;                
+    background-color: #dcf7e1;   
+    color: green;               
     padding: 12px 20px;
     border-radius: 10px;
 
@@ -204,7 +204,7 @@ input:not(:placeholder-shown) {
 
 .successMsg i {
     margin-right: 8px;
-    color: green;  
+    color: green; 
 }
 
 
@@ -1112,3 +1112,83 @@ input:checked + .slider:before {
     border-radius: 6px;
     padding: 0 15px;
 }
+
+.inner-form textarea{
+    background: #F6F9FE;
+    height: 148px;
+    width: 100%;
+    border: 1px solid #D4D9DF;
+    border-radius: 6px;
+    padding: 0 0 0 15px;   
+}
+
+.inner-form textarea:focus,.inner-form input:focus{
+    border-color: rgba(82,168,236,.8);
+    outline: 0;
+    outline: dotted thin\9;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(82,168,236,.6);
+    -moz-box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(82,168,236,.6);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(82,168,236,.6)
+}
+
+.inner-form select {
+    background: #F6F9FE;
+    height: 48px;
+    width: 100%;
+    border: 1px solid #D4D9DF;
+    border-radius: 6px;
+    padding: 0 15px;
+}
+
+.tabs{
+    position: relative;
+    top: 2px;
+}
+
+.tabs ul{
+   padding:0;
+   margin:0; 
+}
+
+.tabs ul li{
+    display: inline-block;
+    -webkit-transition: .5s;
+    transition: .5s;
+    background-color: #fff;
+    border: 1px solid #cbcbcb;
+    border-bottom: 3px solid #cbcbcb;
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 0 0 0 10px;
+    padding: 10px;
+    font-weight: bold;
+    color: #686868;
+}
+
+.tabs ul li:hover{
+    cursor:pointer;
+    background-color: #e2faf2;
+    border-bottom: 3px solid #00CB84;
+    color: #333;
+}
+
+.tabs ul li.active{
+    border-bottom: 3px solid #00CB84;
+    color: #333;
+}
+
+.ml-auto {
+    margin-left: auto;
+}
+
+
+.info-right {
+    text-align: right; 
+}
+
+.info-right p {
+    margin: 0 0 5px 0; 
+    font-size: 14px;
+    color: #2c2f33;
+}
+

@@ -262,7 +262,7 @@ async function del(item = null) {
 
 
 <template>
-  <div class="inside-content campaigns">
+  <div class="inside-content">
     <Header ref="header" />
 
     <div id="spinner" v-if="dataState.loader"></div>
