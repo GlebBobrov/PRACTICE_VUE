@@ -1,16 +1,16 @@
 <script setup>
 import { inject, reactive, ref, onMounted, getCurrentInstance } from 'vue'
 import Header from './widgets/Header.vue'
+import Toogle from './widgets/toogle.vue'
+import Popup from './widgets/Popup.vue'
 
 const app = inject('app')
 const { proxy } = getCurrentInstance()
 
-/* refs (аналог $refs) */
 const header = ref(null)
-const details = ref(null)
+const details = reactive({ active: 0 })
 const newPopup = ref(null)
 
-/* data() */
 const parent = app
 
 const dataState = reactive({
@@ -27,7 +27,16 @@ const dataState = reactive({
   all: true
 })
 
-/* mounted() */
+function openNew() {
+  parent.state.formData = {}  
+  newPopup.value.active = 1
+}
+
+function togglePublish(item) {
+  parent.state.formData = { ...item }
+  action()
+}
+
 onMounted(() => {
   dataState.parent = parent
 
@@ -35,11 +44,10 @@ onMounted(() => {
     parent.page('/')
   }
 
+  // this.GetFirstAndLastDate();
   get()
-  GetFirstAndLastDate()
 })
 
-/* methods */
 function GetFirstAndLastDate() {
   const year = new Date().getFullYear()
   const month = new Date().getMonth()
@@ -64,13 +72,13 @@ function get() {
       parent.state.url + "/site/getCampaigns?auth=" + parent.state.user.auth,
       data
     )
-    .then(response => {
-      dataState.data = response.data
-      dataState.loader = 0
-    })
-    .catch(() => {
-      parent.logout()
-    })
+  .then(response => {
+    dataState.data = response.data
+    if (!Array.isArray(dataState.data.items)) {
+      dataState.data.items = []
+    }
+    dataState.loader = 0
+  })
 }
 
 function action() {
@@ -99,7 +107,9 @@ function action() {
     })
 }
 
-async function del() {
+async function del(item = null) {
+  if (item) parent.state.formData = { ...item }
+
   if (
     await header.value.$refs.msg.confirmFun(
       "Please confirm next action",
@@ -129,6 +139,7 @@ async function del() {
 }
 </script>
 
+
 <template>
   <div class="inside-content campaigns">
     <Header ref="header" />
@@ -136,19 +147,40 @@ async function del() {
     <div id="spinner" v-if="dataState.loader"></div>
 
     <div class="wrapper">
-    <div class="flex panel">
-        <div class="w20"></div>
-        <div class="w60 ac date-range">
-            <input type="date" v-model="dataState.date" @change="get()" />
-            <span class="dash">–</span>
-            <input type="date" v-model="dataState.date2" @change="get()" />
+      <div class="flex panel">
+        <div class="al">
+          <a class="btnS" href="#" @click.prevent="openNew">
+            <i class="fas fa-plus"></i> New
+          </a>
         </div>
-        <div class="w20 al">
-            <h1>Campaigns</h1>
-        </div>
-    </div>
 
-      <div class="table" v-if="dataState.data.items">
+        <div class="w60 ac date-range">
+          <input type="date" v-model="dataState.date" @change="get()" />
+          <span class="dash">–</span>
+          <input type="date" v-model="dataState.date2" @change="get()" />
+        </div>
+
+        <div class="w20 al">
+          <h1>Campaigns</h1>
+        </div>
+      </div>
+
+      <Popup ref="newPopup" :title="parent.state.formData?.id ? 'Edit campaign' : 'New campaign'">
+        <div class="form inner-form">
+          <form @submit.prevent="action()" v-if="parent.state.formData">
+            <div class="row">
+              <label>Name</label>
+              <input type="text" v-model="parent.state.formData.title" required />
+            </div>
+            <div class="row">
+              <button class="btn" v-if="parent.state.formData.id">Edit</button>
+              <button class="btn" v-else>Add</button>
+            </div>
+          </form>
+        </div>
+      </Popup>
+
+      <div class="table" v-if="dataState.data.items && dataState.data.items.length">
         <table>
           <thead>
             <tr>
@@ -166,46 +198,30 @@ async function del() {
           <tbody>
             <tr v-for="item in dataState.data.items" :key="item.id">
               <td class="id">{{ item.id }}</td>
-              <td class="id"></td>
+
+              <td class="id">
+                <Toogle v-model="item.published" @update:modelValue="togglePublish(item)" />
+              </td>
 
               <td>
-                <router-link :to="'/campaign/' + item.id">
-                  {{ item.title }}
-                </router-link>
+                <router-link :to="'/campaign/' + item.id">{{ item.title }}</router-link>
               </td>
 
               <td class="id">
-                <a href="#" @click.prevent="details.active = 1">
-                  {{ item.views }}
-                </a>
+                <a href="#" @click.prevent="details.active = 1">{{ item.views }}</a>
               </td>
-
               <td class="id">
-                <a href="#" @click.prevent="details.active = 1">
-                  {{ item.clicks ? item.clicks : 0 }}
-                </a>
+                <a href="#" @click.prevent="details.active = 1">{{ item.clicks || 0 }}</a>
               </td>
-
               <td class="id">
-                <a href="#" @click.prevent="details.active = 1">
-                  {{ item.leads ? item.leads : 0 }}
-                </a>
+                <a href="#" @click.prevent="details.active = 1">{{ item.leads || 0 }}</a>
               </td>
-
               <td class="id">
-                <a href="#" @click.prevent="details.active = 1">
-                  {{ item.fclicks ? item.fclicks : 0 }}
-                </a>
+                <a href="#" @click.prevent="details.active = 1">{{ item.fclicks || 0 }}</a>
               </td>
 
               <td class="actions">
-                <a
-                  href="#"
-                  @click.prevent="
-                    parent.state.formData = item;
-                    del();
-                  "
-                >
+                <a href="#" @click.prevent="del(item)">
                   <i class="fas fa-trash-alt"></i>
                 </a>
               </td>
@@ -220,3 +236,4 @@ async function del() {
     </div>
   </div>
 </template>
+

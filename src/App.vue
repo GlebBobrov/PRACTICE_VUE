@@ -9,7 +9,7 @@ const { proxy } = getCurrentInstance()
 const state = reactive({
   url: 'https://affiliate.yanbasok.com',
   user: { name: "", phone: "", email: "", date: "", auth: "", type: "" },
-  formData: { email: "", password: "" },
+  formData: {},
   title: "",
   date: "",
   time: ""
