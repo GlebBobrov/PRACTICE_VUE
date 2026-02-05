@@ -7,9 +7,9 @@ const router = useRouter()
 const { proxy } = getCurrentInstance()
 
 const state = reactive({
-  url: 'http://affiliate.yanbasok.com',
+  url: 'https://affiliate.yanbasok.com',
   user: { name: "", phone: "", email: "", date: "", auth: "", type: "" },
-  formData: {},
+  formData: { email: "", password: "" },
   title: "",
   date: "",
   time: ""

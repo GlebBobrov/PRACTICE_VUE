@@ -24,10 +24,15 @@ const logoUrl = computed(() => {
 })
 
 function login() {
+  console.log('Login attempt with data:', state.formData)
+  console.log('Server URL:', state.url)
   const data = app.toFormData(state.formData)
+  console.log('FormData created:', data)
+  console.log('Full URL:', `${state.url}/site/login`)
 
   proxy.$axios.post(`${state.url}/site/login`, data)
     .then(res => {
+      console.log('Server response:', res.data)
       if (res.data.error) {
         msg.value.alertFun(res.data.error)
       }
@@ -36,6 +41,15 @@ function login() {
         state.user = res.data.user
         localStorage.setItem('user', JSON.stringify(res.data.user))
         app.page('/campaigns')
+      }
+    })
+    .catch(error => {
+      console.error('Login error:', error)
+      if (error.response) {
+        console.error('Error response:', error.response.data)
+        msg.value.alertFun(error.response.data.error || 'Ошибка подключения к серверу')
+      } else {
+        msg.value.alertFun('Ошибка подключения к серверу')
       }
     })
 }
