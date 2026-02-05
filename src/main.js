@@ -3,6 +3,7 @@ import App from './App.vue'
 import { router } from './router'
 import axios from 'axios'
 import './assets/css/style.css'
+import './assets/css/template.css'
 
 // Настройка axios
 axios.defaults.timeout = 10000
