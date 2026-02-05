@@ -1,8 +1,12 @@
 <script setup>
 import { inject, reactive, ref, onMounted, getCurrentInstance } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import Header from './widgets/Header.vue'
 import Toogle from './widgets/toogle.vue'
 import Popup from './widgets/Popup.vue'
+import Chart from 'chart.js/auto'
+
+const router = useRouter()
 
 const app = inject('app')
 const { proxy } = getCurrentInstance()
@@ -10,6 +14,11 @@ const { proxy } = getCurrentInstance()
 const header = ref(null)
 const details = reactive({ active: 0 })
 const newPopup = ref(null)
+
+const chartPopup = ref(null)
+const detailsPopup = ref(null)
+const iChart = ref(-1)
+const all = ref(true)
 
 const parent = app
 
@@ -22,10 +31,16 @@ const dataState = reactive({
   q: "",
   sort: "",
   loader: 1,
+  iChart: -1,
   id: 0,
   type: 0,
   all: true
 })
+
+function goCampaign(id) {
+  router.push({ name: 'Campaign', params: { id } })
+}
+
 
 function openNew() {
   parent.state.formData = {}  
@@ -39,10 +54,6 @@ function togglePublish(item) {
 
 onMounted(() => {
   dataState.parent = parent
-
-  if (!parent.state.user || !parent.state.user.auth) {
-    parent.page('/')
-  }
 
   // this.GetFirstAndLastDate();
   get()
@@ -80,6 +91,116 @@ function get() {
     dataState.loader = 0
   })
 }
+
+function getDetails(campaign = false, type = false) {
+  dataState.details = {}
+  if (campaign) dataState.id = campaign
+  if (type) dataState.type = type
+  if (dataState.id) campaign = dataState.id
+  if (dataState.type) type = dataState.type
+
+  const data = parent.toFormData(parent.state.formData)
+  if (dataState.date) data.append('date', dataState.date)
+  if (dataState.date2) data.append('date2', dataState.date2)
+  if (dataState.q) data.append('q', dataState.q)
+  if (dataState.sort) data.append('sort', dataState.sort)
+  if (campaign) data.append('campaign', campaign)
+  if (type) data.append('type', type)
+
+  dataState.loader = 1
+
+  proxy.$axios.post(`${parent.state.url}/site/getStatisticsDetails?auth=${parent.state.user.auth}`, data)
+    .then(res => {
+      dataState.details = res.data
+      dataState.loader = 0
+    })
+    .catch(err => {
+      console.log(err)
+      parent.logout?.()
+    })
+}
+
+function lineChart(item) {
+  if (!item) return
+  setTimeout(() => {
+    const dates = [], clicks = [], views = [], leads = []
+    for (let i in item.line) {
+      dates.push(i)
+      clicks.push(item.line[i].clicks)
+      views.push(item.line[i].views)
+      leads.push(item.line[i].leads)
+    }
+
+    document.getElementById('chartOuter').innerHTML =
+      '<div id="chartHints"><div class="chartHintsViews">Views</div><div class="chartHintsClicks">Clicks</div></div><canvas id="myChart"></canvas>'
+
+    const ctx = document.getElementById('myChart')
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          { label: 'Clicks', backgroundColor: '#00599D', borderColor: '#00599D', data: clicks },
+          { label: 'Views', backgroundColor: '#5000B8', borderColor: '#5000B8', data: views }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          tooltip: {
+            callbacks: { title: ctx => ctx[0].dataset.label }
+          },
+          legend: { display: false }
+        },
+        scales: { y: { position: 'right' }, x: { afterFit: scale => scale.height = 120 } }
+      }
+    })
+  }, 100)
+}
+
+
+function getCampaignChart() {
+  const data = parent.toFormData(parent.state.formData)
+  if (dataState.date) data.append('date', dataState.date)
+  if (dataState.date2) data.append('date2', dataState.date2)
+
+  dataState.loader = 1
+
+  proxy.$axios.post(`${parent.state.url}/site/getCampaignChart?auth=${parent.state.user.auth}`, data)
+    .then(res => {
+      const item = res.data.items
+      if (!item) return
+
+      let totalViews = 0, totalClicks = 0, totalLeads = 0
+      for (const date in item.line) {
+        const row = item.line[date]
+        totalViews += Number(row.views || 0)
+        totalClicks += Number(row.clicks || 0)
+        totalLeads += Number(row.leads || 0)
+      }
+
+      Object.assign(parent.state.formData, {
+        views: totalViews,
+        clicks: totalClicks,
+        leads: totalLeads,
+        line: item.line,
+        sites: item.sites
+      })
+
+      lineChart(item)
+      dataState.loader = 0
+    })
+}
+
+function checkAll(prop) {
+  if (parent.state.formData.sites) {
+    for (let s of parent.state.formData.sites) {
+      s.include = prop
+    }
+  }
+  getCampaignChart()
+}
+
 
 function action() {
   parent.state.formData.copy = ""
@@ -180,6 +301,62 @@ async function del(item = null) {
         </div>
       </Popup>
 
+      <Popup ref="chartPopup" :fullscreen="true" title="Chart">
+          <div class="flex panel">
+            <div class="w70 al">
+              <div class="flex cubes">
+                <div class="w30 ctr">
+                  <div>CTR</div>
+                  <span v-if="parent.state.formData.clicks && parent.state.formData.views">
+                    {{ (parent.state.formData.clicks * 100 / parent.state.formData.views).toFixed(2) }} %
+                  </span>
+                  <span v-else>0.00 %</span>
+                </div>
+                <div class="w30 leads">
+                  <div>Leads</div>
+                  {{ parent.state.formData.leads }}
+                </div>
+                <div class="w30 views">
+                  <div>Views</div>
+                  {{ parent.state.formData.views }}
+                </div>
+                <div class="w30 clicks">
+                  <div>Clicks</div>
+                  {{ parent.state.formData.clicks }}
+                </div>
+              </div>
+            </div>
+
+            <div class="date-range">
+              <input type="date" v-model="dataState.date" @change="getCampaignChart()" />
+              <span class="dash">–</span>
+              <input type="date" v-model="dataState.date2" @change="getCampaignChart()" />
+            </div>
+          </div>
+        <div class="flex body">
+          <div class="w30 ar filchart">
+            <div class="itemchart ptb10">
+              All
+              <Toogle :modelValue="all" @update:modelValue="all=$event; checkAll($event)" />
+            </div>
+
+            <div class="itemchart ptb10" v-for="s in (parent.state.formData.sites || [])" :key="s.site">
+              {{ s.site }}
+              <Toogle :modelValue="s.include" @update:modelValue="s.include=$event; getCampaignChart()" />
+            </div>
+          </div>
+
+          <div class="w70" id="chartOuter">
+            <div id="chartHints">
+              <div class="chartHintsViews">Views</div>
+              <div class="chartHintsClicks">Clicks</div>
+            </div>
+            <canvas id="myChart"></canvas>
+          </div>
+        </div>
+      </Popup>
+
+
       <div class="table" v-if="dataState.data.items && dataState.data.items.length">
         <table>
           <thead>
@@ -208,21 +385,27 @@ async function del(item = null) {
               </td>
 
               <td class="id">
-                <a href="#" @click.prevent="details.active = 1">{{ item.views }}</a>
+                <a href="#" @click.prevent="details.active = 1; getDetails(item.id, 1)">{{ item.views }}</a>
               </td>
               <td class="id">
-                <a href="#" @click.prevent="details.active = 1">{{ item.clicks || 0 }}</a>
+                <a href="#" @click.prevent="details.active = 1; getDetails(item.id, 2)">{{ item.clicks || 0 }}</a>
               </td>
               <td class="id">
-                <a href="#" @click.prevent="details.active = 1">{{ item.leads || 0 }}</a>
+                <a href="#" @click.prevent="details.active = 1; getDetails(item.id, 2)">{{ item.leads || 0 }}</a>
               </td>
               <td class="id">
-                <a href="#" @click.prevent="details.active = 1">{{ item.fclicks || 0 }}</a>
+                <a href="#" @click.prevent="details.active = 1; getDetails(item.id, 3)">{{ item.fclicks || 0 }}</a>
               </td>
 
               <td class="actions">
                 <a href="#" @click.prevent="del(item)">
                   <i class="fas fa-trash-alt"></i>
+                </a>
+                <a href="#" @click.prevent="parent.state.formData = { ...item }; iChart = i; $refs.chartPopup.active = 1; getCampaignChart();">
+                  <i class="fas fa-chart-bar"></i>
+                </a>
+                <a href="#" @click.prevent.stop="goCampaign(item.id)">
+                  <i class="fas fa-edit"></i>
                 </a>
               </td>
             </tr>

@@ -24,39 +24,42 @@ function init() {
     state.user = JSON.parse(localStorage.getItem('user'))
   }
 
-  router.isReady().then(() => {
+router.isReady().then(() => {
+  if (localStorage.getItem('user')) {
 
-    if (localStorage.getItem('user')) {
+    if (route.path === '/' && state.user.type === 'admin') {
+      page('/campaigns')
 
-      if (route.path === '/' && state.user.type === 'admin') {
-        page('/campaigns')
+    } else if (
+      ['/campaigns', '/campaign', '/users', '/user'].includes(route.path) &&
+      state.user.type !== 'admin'
+    ) {
+      page('/statistics')
 
-      } else if (
-        ['/campaigns', '/campaign', '/users', '/user'].includes(route.path)
-        && state.user.type !== 'admin'
-      ) {
-        page('/statistics')
+    } else if (
+      ['/statistics', '/payments', '/sites'].includes(route.path) &&
+      state.user.type === 'admin'
+    ) {
+      page('/campaigns')
 
-      } else if (
-        ['/statistics', '/payments', '/sites'].includes(route.path)
-        && state.user.type === 'admin'
-      ) {
-        page('/campaigns')
+    } else if (
+      ['/campaigns', '/campaign', '/users', '/user', '/statistics', '/payments', '/sites']
+        .includes(route.path)
+    ) {
+      page()
 
-      } else if (
-        ['/campaigns', '/campaign', '/users', '/user', '/statistics', '/payments', '/sites']
-          .includes(route.path)
-      ) {
-        page()
-
-      } else {
-        page('/')
-      }
-
-    } else {
-      page('/')
+    } else if (
+      !['/campaigns', '/campaign', '/users', '/user', '/statistics', '/payments', '/sites']
+        .includes(route.path)
+    ) {
+      page()
     }
-  })
+
+  } else {
+    page('/')
+  }
+})
+
 }
 
 function logout() {

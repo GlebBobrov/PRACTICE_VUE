@@ -64,16 +64,16 @@ function login() {
     </div>
 
     <div id="left-area" class="w40">
-      <div class="header">
-        <div class="wrapper flex">
-          <div class="w60">
-            <h1>Affiliate Sign in</h1>
-          </div>
-          <div class="w40 logo al">
-            <img v-if="logoUrl" :src="logoUrl" />
-          </div>
+    <div class="login-header">
+        <div class="login-header-wrapper">
+            <div class="login-title">
+                <h1>Affiliate Sign in</h1>
+            </div>
+            <div class="login-logo">
+                <img v-if="logoUrl" :src="logoUrl" />
+            </div>
         </div>
-      </div>
+    </div>
 
       <div class="form inner-form p20">
         <form @submit.prevent="login" v-if="state.formData">
